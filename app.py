@@ -10,6 +10,8 @@ import io
 import requests
 import json
 import xgboost as xgb
+from xgboost import XGBRegressor
+
 
 # Load the trained model and preprocessing objects
 model = XGBRegressor()
