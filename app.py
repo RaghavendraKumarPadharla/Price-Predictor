@@ -53,9 +53,11 @@ def preprocess_input(input_data, label_encoders, scaler):
     numerical_cols = ['Rating', 'Discount (%)', 'Reviews Count']
     input_df[numerical_cols] = scaler.transform(input_df[numerical_cols])
     
-    # Convert to DMatrix for XGBoost prediction
-    dmatrix = xgb.DMatrix(input_df)
-    return dmatrix
+    # Ensure all features are in the correct order
+    if 'features' in globals():
+        input_df = input_df[features]
+    
+    return input_df
 
 def rating_to_stars(rating):
     """Convert numeric rating to star symbols"""
@@ -294,47 +296,49 @@ def main():
 
         # Move Best Price section here
         if predict_button:
-            # Preprocess input data and convert to DMatrix
-            processed_input = preprocess_input(input_data, label_encoders, scaler)
-            
-            # Make prediction using XGBoost model
-            predicted_price = model.predict(processed_input)[0]
-            
-            # Compare Current Price and Competitor Price to determine best price
-            if actual_price < competitor_price:
-                best_price = actual_price
-                best_price_source = "Current Price"
-            else:
-                best_price = competitor_price
-                best_price_source = "Competitor Price"
+            try:
+                # Preprocess input data
+                processed_input = preprocess_input(input_data, label_encoders, scaler)
+                
+                # Make prediction using XGBoost model
+                predicted_price = float(model.predict(processed_input)[0])
+                
+                # Compare Current Price and Competitor Price to determine best price
+                if actual_price < competitor_price:
+                    best_price = actual_price
+                    best_price_source = "Current Price"
+                else:
+                    best_price = competitor_price
+                    best_price_source = "Competitor Price"
 
-            # Convert the determined best price to INR
-            best_price_inr = convert_usd_to_inr(best_price)
+                # Convert the determined best price to INR
+                best_price_inr = convert_usd_to_inr(best_price)
 
-            # Display the best price suggestion in a full-width card model
-            st.markdown(f"""
-                <div style='background-color: #d4edda; padding: 2px 10px 0px 2px; width: 60%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 20px;'>
-                    <h3 style='color: #155724; font-weight: bold; text-align: center;'>Best Price</h3>
-                    <p style='color: #155724; font-size: 1.5rem; text-align: center;'><strong>$:</strong> ${best_price:.2f} ({best_price_source})</p>
-                    <p style='color: #155724; font-size: 1.5rem; text-align: center;'><strong>INR:</strong> ₹{best_price_inr:.2f}</p>
-                </div>
-            """, unsafe_allow_html=True)
+                # Display the best price suggestion in a full-width card model
+                st.markdown(f"""
+                    <div style='background-color: #d4edda; padding: 2px 10px 0px 2px; width: 60%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 20px;'>
+                        <h3 style='color: #155724; font-weight: bold; text-align: center;'>Best Price</h3>
+                        <p style='color: #155724; font-size: 1.5rem; text-align: center;'><strong>$:</strong> ${best_price:.2f} ({best_price_source})</p>
+                        <p style='color: #155724; font-size: 1.5rem; text-align: center;'><strong>INR:</strong> ₹{best_price_inr:.2f}</p>
+                    </div>
+                """, unsafe_allow_html=True)
 
-            # Prepare the selected product data for download
-            selected_product_data = prepare_selected_product_data(selected_product, df, best_price, best_price_source, best_price_inr)
-            csv_selected_data = convert_df_to_csv(selected_product_data)
+                # Prepare the selected product data for download
+                selected_product_data = prepare_selected_product_data(selected_product, df, best_price, best_price_source, best_price_inr)
+                csv_selected_data = convert_df_to_csv(selected_product_data)
 
-            # Custom CSS for enhancing the download button and positioning it
-            st.markdown("""
-                <div class='download-container'>
-            """, unsafe_allow_html=True)
-            st.download_button(
-                label="Download Price Analysis",
-                data=csv_selected_data,
-                file_name=f'{selected_product}_data_with_competitor.csv',
-                mime='text/csv'
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+                # Custom CSS for enhancing the download button and positioning it
+                st.markdown("<div class='download-container'>", unsafe_allow_html=True)
+                st.download_button(
+                    label="Download Price Analysis",
+                    data=csv_selected_data,
+                    file_name=f'{selected_product}_data_with_competitor.csv',
+                    mime='text/csv'
+                )
+                st.markdown("</div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error making prediction: {str(e)}")
+                return
 
     # Create a container for the charts
     st.markdown("""
