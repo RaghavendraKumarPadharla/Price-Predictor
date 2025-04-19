@@ -9,15 +9,14 @@ import seaborn as sns
 import io
 import requests
 import json
+import xgboost as xgb
 
 # Load the trained model and preprocessing objects
-model = joblib.load('price_predictor_model.joblib')
-scaler = joblib.load('scaler.joblib')
+model = xgb.Booster()
+model.load_model('price_predictor_model.json')
 label_encoders = joblib.load('label_encoders.joblib')
 features = joblib.load('features.joblib')
-
-# Load the trained XGBoost model
-xgboost_model = joblib.load('xgboost_model.joblib')
+scaler = joblib.load('scaler.joblib')
 
 # Load the original data for comparison
 df = pd.read_excel('ecommerce_price_predictor_combined_with_sales_discounted.xlsx')
@@ -55,7 +54,9 @@ def preprocess_input(input_data, label_encoders, scaler):
     numerical_cols = ['Rating', 'Discount (%)', 'Reviews Count']
     input_df[numerical_cols] = scaler.transform(input_df[numerical_cols])
     
-    return input_df
+    # Convert to DMatrix for XGBoost prediction
+    dmatrix = xgb.DMatrix(input_df)
+    return dmatrix
 
 def rating_to_stars(rating):
     """Convert numeric rating to star symbols"""
@@ -294,11 +295,11 @@ def main():
 
         # Move Best Price section here
         if predict_button:
-            # Preprocess input data
+            # Preprocess input data and convert to DMatrix
             processed_input = preprocess_input(input_data, label_encoders, scaler)
             
             # Make prediction using XGBoost model
-            predicted_price = xgboost_model.predict(processed_input)[0]
+            predicted_price = model.predict(processed_input)[0]
             
             # Compare Current Price and Competitor Price to determine best price
             if actual_price < competitor_price:
