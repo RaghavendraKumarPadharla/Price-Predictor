@@ -44,6 +44,13 @@ def preprocess_input(input_data, label_encoders, scaler):
     # Create a DataFrame with the input data
     input_df = pd.DataFrame([input_data])
     
+    # Ensure all required columns are present
+    required_columns = ['Category', 'Brand', 'Rating', 'Discount (%)', 'Reviews Count']
+    for col in required_columns:
+        if col not in input_df.columns:
+            st.error(f"Missing required column: {col}")
+            return None
+    
     # Encode categorical variables
     for col in ['Category', 'Brand']:
         if col in label_encoders:
@@ -53,9 +60,10 @@ def preprocess_input(input_data, label_encoders, scaler):
     numerical_cols = ['Rating', 'Discount (%)', 'Reviews Count']
     input_df[numerical_cols] = scaler.transform(input_df[numerical_cols])
     
-    # Ensure all features are in the correct order
+    # Ensure all features are in the correct order, excluding 'Price (USD)'
     if 'features' in globals():
-        input_df = input_df[features]
+        feature_cols = [col for col in features if col != 'Price (USD)']
+        input_df = input_df[feature_cols]
     
     return input_df
 
