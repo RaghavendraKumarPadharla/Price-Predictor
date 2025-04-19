@@ -26,9 +26,8 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
             max_depth=6,
             learning_rate=0.1,
             random_state=42,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            predictor='cpu_predictor'  # Explicitly set predictor
+            tree_method='hist',  # Use histogram-based algorithm
+            enable_categorical=False  # Disable categorical feature support
         )
     }
     
