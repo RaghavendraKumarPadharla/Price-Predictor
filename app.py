@@ -13,6 +13,7 @@ import xgboost as xgb
 
 # Load the trained model and preprocessing objects
 model = joblib.load('xgboost_model.joblib')
+model.set_params(device='cpu')  # Ensure model uses CPU
 label_encoders = joblib.load('label_encoders.joblib')
 features = joblib.load('features.joblib')
 scaler = joblib.load('scaler.joblib')
