@@ -27,7 +27,8 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
             learning_rate=0.1,
             random_state=42,
             subsample=0.8,
-            colsample_bytree=0.8
+            colsample_bytree=0.8,
+            predictor='cpu_predictor'  # Explicitly set predictor
         )
     }
     
@@ -106,6 +107,6 @@ if __name__ == "__main__":
     # Save the best model, preprocessing objects, and metrics
     save_model(best_model, scaler, label_encoders, results)
 
-    # Save XGBoost model in JSON format
+    # Save XGBoost model using joblib
     xgb_model = models['XGBoost']
-    xgb_model.save_model('price_predictor_model.json')
+    joblib.dump(xgb_model, 'xgboost_model.joblib')
