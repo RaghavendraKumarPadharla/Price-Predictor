@@ -7,6 +7,7 @@ from xgboost import XGBRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, mean_absolute_percentage_error
 import joblib
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+import xgboost as xgb
 
 def train_and_evaluate_models(X_train, X_test, y_train, y_test):
     """Train and evaluate multiple models"""
@@ -105,6 +106,6 @@ if __name__ == "__main__":
     # Save the best model, preprocessing objects, and metrics
     save_model(best_model, scaler, label_encoders, results)
 
-    # Specifically save the XGBoost model
-    xgboost_model = models['XGBoost']
-    joblib.dump(xgboost_model, 'xgboost_model.joblib') 
+    # Save XGBoost model in JSON format
+    xgb_model = models['XGBoost']
+    xgb_model.save_model('price_predictor_model.json')
