@@ -12,8 +12,7 @@ import json
 import xgboost as xgb
 
 # Load the trained model and preprocessing objects
-model = xgb.Booster()
-model.load_model('price_predictor_model.json')
+model = joblib.load('xgboost_model.joblib')
 label_encoders = joblib.load('label_encoders.joblib')
 features = joblib.load('features.joblib')
 scaler = joblib.load('scaler.joblib')
