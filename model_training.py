@@ -27,7 +27,8 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
             learning_rate=0.1,
             random_state=42,
             tree_method='hist',  # Use histogram-based algorithm
-            enable_categorical=False  # Disable categorical feature support
+            enable_categorical=False,  # Disable categorical feature support
+            device='cpu'  # Explicitly set device to CPU
         )
     }
     
