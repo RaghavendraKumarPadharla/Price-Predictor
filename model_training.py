@@ -5,9 +5,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, mean_absolute_percentage_error
-import joblib
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-import xgboost as xgb
+import joblib
 
 def train_and_evaluate_models(X_train, X_test, y_train, y_test):
     """Train and evaluate multiple models"""
@@ -26,31 +25,26 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
             max_depth=6,
             learning_rate=0.1,
             random_state=42,
-            tree_method='hist',  # Use histogram-based algorithm
-            enable_categorical=False,  # Disable categorical feature support
-            device='cpu'  # Explicitly set device to CPU
+            tree_method='hist',
+            enable_categorical=False,
+            device='cpu'
         )
     }
-    
+
     results = {}
     best_model = None
     best_r2 = -np.inf
-    
+
     for name, model in models.items():
-        # Train model
         model.fit(X_train, y_train)
-        
-        # Make predictions
         y_pred = model.predict(X_test)
-        
-        # Calculate metrics
+
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         mae = mean_absolute_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
         mape = mean_absolute_percentage_error(y_test, y_pred)
-        accuracy = (1 - mape) * 100  # Convert MAPE to accuracy percentage
-        
-        # Store results
+        accuracy = (1 - mape) * 100
+
         results[name] = {
             'RMSE': rmse,
             'MAE': mae,
@@ -58,55 +52,39 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
             'MAPE': mape,
             'Accuracy': accuracy
         }
-        
-        # Update best model
+
         if r2 > best_r2:
             best_r2 = r2
             best_model = model
-    
-    return results, best_model, models
+
+    return results, best_model
 
 def save_model(model, scaler, label_encoders, metrics):
-    """Save the trained model, preprocessing objects, and metrics"""
-    joblib.dump(model, 'price_predictor_model.joblib')
+    """Save the model and preprocessing objects"""
+    if isinstance(model, XGBRegressor):
+        model.save_model('price_predictor_model.json')  # XGBoost native format
+    else:
+        joblib.dump(model, 'price_predictor_model.joblib')
+
     joblib.dump(scaler, 'scaler.joblib')
     joblib.dump(label_encoders, 'label_encoders.joblib')
     joblib.dump(metrics, 'model_metrics.joblib')
 
 if __name__ == "__main__":
-    # Load preprocessed data
     df = pd.read_csv('processed_data.csv')
-    
-    # Prepare data for modeling
     X = df.drop('Price (USD)', axis=1)
     y = df['Price (USD)']
-    
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-    
-    # Train and evaluate all models
-    results, best_model, models = train_and_evaluate_models(X_train, X_test, y_train, y_test)
-    
-    # Print results for all models
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    results, best_model = train_and_evaluate_models(X_train, X_test, y_train, y_test)
+
     print("\nModel Evaluation Results:")
-    print("=" * 50)
-    for model_name, metrics in results.items():
-        print(f"\n{model_name}:")
-        print(f"R² Score: {metrics['R2 Score']:.4f}")
-        print(f"Accuracy: {metrics['Accuracy']:.2f}%")
-        print(f"RMSE: {metrics['RMSE']:.2f}")
-        print(f"MAE: {metrics['MAE']:.2f}")
-        print(f"MAPE: {metrics['MAPE']:.4f}")
-    print("=" * 50)
-    
-    # Load the scaler and label encoders
+    for name, metrics in results.items():
+        print(f"\n{name}:")
+        for k, v in metrics.items():
+            print(f"{k}: {v:.4f}")
+
     scaler = joblib.load('scaler.joblib')
     label_encoders = joblib.load('label_encoders.joblib')
-    
-    # Save the best model, preprocessing objects, and metrics
     save_model(best_model, scaler, label_encoders, results)
-
-    # Save XGBoost model using joblib
-    xgb_model = models['XGBoost']
-    joblib.dump(xgb_model, 'xgboost_model.joblib')
